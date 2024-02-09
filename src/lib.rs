@@ -6,7 +6,7 @@ use bevy::{
     prelude::*,
     window::{RawHandleWrapper, WindowResized},
 };
-use raw_window_handle::{ActiveHandle, WindowHandle};
+use raw_window_handle::WindowHandle;
 use serde::{Deserialize, Serialize};
 
 pub mod ipc;
@@ -177,8 +177,7 @@ impl WebViewPlugin {
 
                 *handle = WebViewHandle(Some(registry.len()));
 
-                let borrowed_handle =
-                    unsafe { &WindowHandle::borrow_raw(window_handle, ActiveHandle::new()) };
+                let borrowed_handle = unsafe { &WindowHandle::borrow_raw(window_handle) };
 
                 #[cfg(not(any(
                     target_os = "linux",
@@ -215,9 +214,13 @@ impl WebViewPlugin {
                 let webview = {
                     let func = tis.clone().make_ipc_handler();
                     WebViewBuilder::new(&borrowed_handle)
-                        .with_position(final_position)
+                        .with_bounds(wry::Rect {
+                            x: final_position.0,
+                            y: final_position.1,
+                            width: size.x as u32,
+                            height: size.y as u32,
+                        })
                         .with_transparent(true)
-                        .with_size((size.x as u32, size.y as u32))
                         .with_initialization_script(include_str!("../assets/init_linux.js"))
                         .with_ipc_handler(func)
                 };

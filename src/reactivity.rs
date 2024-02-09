@@ -7,8 +7,7 @@ impl Plugin for WebViewReactivityPlugin {
         app.add_systems(
             Update,
             (
-                Self::on_webview_resize,
-                Self::on_webview_reposition,
+                Self::on_webview_reposition_resize,
                 Self::on_webview_redirect,
                 Self::on_window_resize,
             ),
@@ -17,35 +16,23 @@ impl Plugin for WebViewReactivityPlugin {
 }
 
 impl WebViewReactivityPlugin {
-    fn on_webview_resize(
-        registry: NonSendMut<WebViewRegistry>,
-        query: Query<(&WebViewHandle, &Node), (With<WebViewMarker>, Changed<Node>)>,
-    ) {
-        for (handle, size) in query.iter() {
-            handle.map(|x| {
-                registry
-                    .get(x)
-                    .map(|webview| webview.set_size((size.size().x as u32, size.size().y as u32)))
-            });
-        }
-    }
-
-    fn on_webview_reposition(
+    fn on_webview_reposition_resize(
         registry: NonSendMut<WebViewRegistry>,
         query: Query<
             (&WebViewHandle, &GlobalTransform, &Node),
             (With<WebViewMarker>, Changed<GlobalTransform>),
         >,
     ) {
-        for (handle, position, size) in query.iter() {
-            let size = size.size();
+        for (handle, position, node) in query.iter() {
+            let size = node.size();
             handle.map(|x| {
                 registry.get(x).map(|webview| {
-                    let final_position = (
-                        (position.translation().x - size.x / 2.0) as i32,
-                        (position.translation().y - size.y / 2.0) as i32,
-                    );
-                    webview.set_position(final_position)
+                    webview.set_bounds(wry::Rect {
+                        x: (position.translation().x - size.x / 2.0) as i32,
+                        y: (position.translation().y - size.y / 2.0) as i32,
+                        width: size.x as u32,
+                        height: size.y as u32,
+                    });
                 })
             });
         }
@@ -82,10 +69,14 @@ impl WebViewReactivityPlugin {
                     (position.translation().x - size.x / 2.0) as i32,
                     (position.translation().y - size.y / 2.0) as i32,
                 );
-                handle
-                    .map(|x| registry.get(x))
-                    .flatten()
-                    .map(|webview| webview.set_position(final_position));
+                handle.map(|x| registry.get(x)).flatten().map(|webview| {
+                    webview.set_bounds(wry::Rect {
+                        x: final_position.0,
+                        y: final_position.1,
+                        width: size.x as u32,
+                        height: size.y as u32,
+                    });
+                });
             }
         }
     }

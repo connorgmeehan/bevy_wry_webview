@@ -5,9 +5,6 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[patch.crates-io]
-toml_datetime = { version = "0.6.5" }
-
 [dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", version = "0.12.0" }
 wry = { version = "0.36", default-features = false, features = ["file-drop", "objc-exception", "protocol", "transparent", "os-webview"] }
@@ -16,6 +13,7 @@ serde = { version = "1.0.193", features = ["derive"]  }
 rmp = "^0.8"
 rmp-serde = "1.1.2"
 raw-window-handle = "0.6"
+toml_datetime = "0.6.5" # Address version conflict between bevy and gtk
 
 # [target."cfg(not(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\")))".dependencies]
 

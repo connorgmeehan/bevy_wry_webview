@@ -1,8 +1,7 @@
 use bevy::prelude::*;
-use bevy_simple_text_input::{TextInput, TextInputPlugin, TextInputSubmitEvent};
 use bevy_wry_webview::{
-    ipc::{FetchEvent, IpcQueue, IpcSender},
-    UiWebViewBundle, WebViewHandle, WebViewLocation, WebViewMarker, WebViewPlugin,
+    ipc::{IpcQueue},
+    UiWebViewBundle, WebViewLocation, WebViewMarker, WebViewPlugin,
 };
 use serde::Deserialize;
 
@@ -10,9 +9,8 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(WebViewPlugin)
-        .add_plugins(TextInputPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, (moving_webview, log_msgs, text_listener))
+        .add_systems(Update, (moving_webview, log_msgs))
         .run();
 }
 
@@ -40,14 +38,6 @@ fn setup(
             },
             border_color: BorderColor(Color::BLACK),
             background_color: Color::RED.into(),
-            ..default()
-        },
-        TextInput {
-            text_style: TextStyle {
-                font_size: 40.,
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..default()
-            },
             ..default()
         },
     ));
@@ -111,14 +101,14 @@ html, body {
 
     // plane
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        mesh: meshes.add(shape::Plane::from_size(5.0)),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
         ..default()
     });
     // cube
     commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        material: materials.add(Color::rgb(0.8, 0.7, 0.6)),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..default()
     });
@@ -156,17 +146,5 @@ fn log_msgs(mut query: Query<&mut IpcQueue<Msg>>) {
     let mut ipc = query.single_mut();
     for i in &mut ipc {
         println!("{:?}", i);
-    }
-}
-
-fn text_listener(
-    mut events: EventReader<TextInputSubmitEvent>,
-    mut writer: EventWriter<FetchEvent>,
-    query: Query<(&WebViewHandle, &mut IpcSender<String>)>,
-) {
-    if let Ok((wvhandle, ipc_handler)) = query.get_single() {
-        for event in events.read() {
-            writer.send(ipc_handler.send(*wvhandle, event.value.clone()));
-        }
     }
 }
